@@ -1,16 +1,41 @@
-# This is a sample Python script.
+import folium
+import pandas
 
-# Press Shift+F10 to execute it or replace it with your code.
-# Press Double Shift to search everywhere for classes, files, tool windows, actions, and settings.
+data = pandas.read_csv("Volcanoes.txt")
+lat = list(data["LAT"])
+lon = list(data["LON"])
+name = list(data["NAME"])
+elev = list(data["ELEV"])
 
 
-def print_hi(name):
-    # Use a breakpoint in the code line below to debug your script.
-    print(f'Hi, {name}')  # Press Ctrl+F8 to toggle the breakpoint.
+def color_generator(elevation):
+    if elevation < 1000:
+        return 'green'
+    elif elevation <= 3000:
+        return 'orange'
+    else:
+        return 'red'
 
 
-# Press the green button in the gutter to run the script.
-if __name__ == '__main__':
-    print_hi('PyCharm')
+myMap = folium.Map(location=[35.869999, -106.570999], zoom_start=6)
 
-# See PyCharm help at https://www.jetbrains.com/help/pycharm/
+fgv = folium.FeatureGroup(name="Volcanoes")
+
+for lt, ln, name, el in zip(lat, lon, name, elev):
+    fgv.add_child(folium.CircleMarker(location=[lt, ln], popup=name,
+                                      fill_color=color_generator(el), color='grey', fill_opacity=0.7, radius=7))
+
+fgp = folium.FeatureGroup(name="Population")
+
+fgp.add_child(folium.GeoJson(data=(open('world.json', encoding='utf-8-sig').read()),
+                             style_function=lambda x: {'fillColor': 'yellow' if x['properties']['POP2005'] < 10000000
+                            else 'orange' if 10000000 <= x['properties']['POP2005'] < 20000000
+                            else 'red'}))
+
+
+myMap.add_child(fgv)
+myMap.add_child(fgp)
+myMap.add_child(folium.LayerControl())
+
+
+myMap.save("Map.html")
